@@ -2,7 +2,7 @@ import sqlite3
 
 
 def _fresh_conn(tmp_path, monkeypatch) -> sqlite3.Connection:
-    monkeypatch.setenv("JARVIS_DB_PATH", str(tmp_path / "test.db"))
+    monkeypatch.setenv("ARIA_DB_PATH", str(tmp_path / "test.db"))
     from backend.core.config import get_settings
 
     get_settings.cache_clear()

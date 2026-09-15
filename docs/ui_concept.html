@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Jarvis Interface Concept</title>
+<title>A.R.I.A. Interface Concept</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
 <style>
   :root{
@@ -180,9 +180,9 @@
 <div class="wrap">
 
   <header>
-    <p class="eyebrow">Jarvis · Voice-first assistant</p>
+    <p class="eyebrow">A.R.I.A. · Voice-first assistant</p>
     <h1>The screen is a status display</h1>
-    <p class="lede">Voice does the work — the screen's only job is to answer <strong>“what is Jarvis doing right now?”</strong> from across the room. The orb carries the state; transcript and cards stay glanceable and never block.</p>
+    <p class="lede">Voice does the work — the screen's only job is to answer <strong>“what is A.R.I.A. doing right now?”</strong> from across the room. The orb carries the state; transcript and cards stay glanceable and never block.</p>
   </header>
 
   <div class="switcher" role="group" aria-label="Orb state">
@@ -223,7 +223,7 @@
             <span class="bubble">What's the weather like outside?</span>
           </div>
           <div class="msg assistant">
-            <span class="who">Jarvis · <span class="stamp">14:32</span></span>
+            <span class="who">A.R.I.A. · <span class="stamp">14:32</span></span>
             <div class="card weather">
               <span class="icon">
                 <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5 5l1.6 1.6M17.4 17.4L19 19M19 5l-1.6 1.6M6.6 17.4L5 19"/></svg>
@@ -251,7 +251,7 @@
             <div class="notch" aria-hidden="true"></div>
             <div class="topbar">
               <span class="conn"><span class="dot"></span></span>
-              <span class="brand">Jarvis</span>
+              <span class="brand">A.R.I.A.</span>
               <button class="tbtn" aria-label="Settings">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg>
               </button>
@@ -334,7 +334,7 @@
 (function(){
   "use strict";
   var STATES = {
-    idle:      {color:"#7E93B4", energy:.18, label:"Say “Hey Jarvis”", hint:"wake word armed · mic is local-only"},
+    idle:      {color:"#7E93B4", energy:.18, label:"Say “Hey Aria”", hint:"wake word armed · mic is local-only"},
     listening: {color:"#3AE0FF", energy:.85, label:"Listening…",           hint:"streaming · realtime"},
     thinking:  {color:"#A78BFA", energy:.55, label:"Thinking…",            hint:"working on it"},
     speaking:  {color:"#3FDFA8", energy:1,   label:"Speaking…",            hint:"playing response"}

@@ -1,4 +1,4 @@
-# Jarvis — Project Rules for Claude
+# A.R.I.A. — Project Rules for Claude
 
 ## Read First
 - docs/MASTER_SPEC.md — full architecture

@@ -1,4 +1,4 @@
-#  — Master Specification
+# A.R.I.A. — Master Specification
 
 **Status:** Source of truth for development · v1.0 · 2026-09-15
 **Owner:** You. Every deviation from this doc is a decision that gets written back here.
@@ -14,7 +14,7 @@
 
 ## 1. Executive Summary
 
-Jarvis is a voice-first personal assistant built as one Python FastAPI backend that owns the entire voice pipeline (wake word → realtime speech model → speaker) and all capabilities (tools, memory, scheduler, vision, browser, OS access), with thin display clients — an Electron window today, a Capacitor app later — connected over a local WebSocket. Everything persists in a single SQLite file (plus the sqlite-vec extension for embeddings) with `user_id` columns from day one so multi-tenant SaaS is a retrofit of auth, not a data migration. V1 (1–2 weeks) is only the voice loop proven end-to-end; V2 (4–8 weeks) layers memory, tools, cron, vision, browser, OS access, and mobile in strict order, with LangGraph deferred until a concrete trigger fires. The design rule throughout: one process, one database, one file per capability, no frameworks until a measured need exists.
+A.R.I.A. is a voice-first personal assistant built as one Python FastAPI backend that owns the entire voice pipeline (wake word → realtime speech model → speaker) and all capabilities (tools, memory, scheduler, vision, browser, OS access), with thin display clients — an Electron window today, a Capacitor app later — connected over a local WebSocket. Everything persists in a single SQLite file (plus the sqlite-vec extension for embeddings) with `user_id` columns from day one so multi-tenant SaaS is a retrofit of auth, not a data migration. V1 (1–2 weeks) is only the voice loop proven end-to-end; V2 (4–8 weeks) layers memory, tools, cron, vision, browser, OS access, and mobile in strict order, with LangGraph deferred until a concrete trigger fires. The design rule throughout: one process, one database, one file per capability, no frameworks until a measured need exists.
 
 ---
 
@@ -42,7 +42,7 @@ flowchart TB
         T2["vision · browser (Playwright)<br/>OS access · memory_forget"]
     end
 
-    DB[("SQLite + sqlite-vec<br/>jarvis.db")]
+    DB[("SQLite + sqlite-vec<br/>aria.db")]
 
     E <-->|"WS: events + commands"| ORCH
     M <-->|"WSS: audio uplink + events (2G)"| ORCH
@@ -73,7 +73,7 @@ flowchart TB
 
 | Layer | Choice | Verdict | One-line justification |
 |---|---|---|---|
-| Wake word | Porcupine | Keep | On-device, ~$0 CPU, and "Jarvis" is a built-in keyword — zero custom training. |
+| Wake word | Porcupine | Keep | On-device, ~$0 CPU; "aria" needs a free custom keyword (Picovoice Console, ~2 min to train). |
 | VAD | Silero VAD | Defer to 2G | Realtime's server VAD already owns turn detection; Silero's upload-gating only pays off once the mic uplink crosses a network (2G mobile). |
 | Primary voice loop | OpenAI Realtime API | Keep | STT+LLM+TTS in one socket ≈ sub-second responses; nothing you can assemble from parts beats it on latency. |
 | Fallback STT | Deepgram Nova-3 | Keep, built on demand | See flag #1 below — serves the fallback text brain, not the primary loop; build only when a Realtime outage demands it (flag #7). |
@@ -106,7 +106,7 @@ flowchart TB
 ## 4. Project Structure
 
 ```
-jarvis/
+aria/
 ├── docs/
 │   ├── MASTER_SPEC.md            ← this file
 │   └── phases/                   ← one checklist per V2 phase, written when the phase starts
@@ -154,10 +154,10 @@ jarvis/
 │       └── lib/ws.ts             ← typed WS client + event types
 ├── desktop/                      ← Electron shell only
 │   ├── main.js                   ← window, tray, global hotkey; loads shared-ui
-│   └── preload.js                ← exposes window.jarvis (onEvent, approve)
+│   └── preload.js                ← exposes window.aria (onEvent, approve)
 ├── mobile/                       ← Capacitor shell only (2G)
 │   └── capacitor.config.ts       ← appUrl → built shared-ui; plugins: mic, FCM
-├── data/                         ← jarvis.db (gitignored)
+├── data/                         ← aria.db (gitignored)
 ├── scripts/
 │   └── soak_test_wake.py         ← 1hr false-wake measurement (V1 acceptance)
 ├── .env.example
@@ -171,7 +171,7 @@ Rules: no code outside these folders; tools import nothing from each other; `cor
 
 ## 5. Data Model
 
-One file: `data/jarvis.db`. WAL mode, `PRAGMA foreign_keys = ON`. Migrations = numbered `.sql` files applied at startup (`db.py`, 30 lines, no Alembic).
+One file: `data/aria.db`. WAL mode, `PRAGMA foreign_keys = ON`. Migrations = numbered `.sql` files applied at startup (`db.py`, 30 lines, no Alembic).
 
 ### V1 (shipped week 1–2)
 
@@ -429,7 +429,7 @@ sequenceDiagram
     participant UI as Electron (transcript)
 
     Note over GW: IDLE — only Porcupine listening (~0% CPU)
-    U->>P: "Hey Jarvis"
+    U->>P: "Hey Aria"
     P->>GW: wake detected (<100ms, on-device)
     GW->>RT: open WS + session.update (persona, memory block, tools)
     GW->>GW: state=LISTENING, mic streams straight to Realtime
@@ -548,7 +548,7 @@ ABOUT THE USER
 
 **When embeddings are created:** on memory insert, on memory update, and one query embedding per user turn (`text-embedding-3-small`, 1536 dims — fractions of a cent per day). Nothing else embeds; raw `turns` are never vectorized.
 
-**Forgetting:** `memory_forget` tool (2A) — "Jarvis, forget that…" → embed query → top match shown as a confirm card → `active = 0` (soft delete; real delete in the SaaS GDPR story). No auto-expiry.
+**Forgetting:** `memory_forget` tool (2A) — "A.R.I.A., forget that…" → embed query → top match shown as a confirm card → `active = 0` (soft delete; real delete in the SaaS GDPR story). No auto-expiry.
 
 ---
 
@@ -621,7 +621,7 @@ Acceptance: **wake → first word of spoken answer < 2.0s** (primary path). Budg
 
 **Browser automation (2E):** allowlist in `settings` (`allowed_domains`); `http://`, `file://`, localhost, and private IP ranges are hard-denied; every navigation logged to `tool_calls`; the agent never types into password/OTP fields (Playwright script checks input type and refuses); purchases and form submissions are `confirm`.
 
-**OS access (2F):** fixed function set only — `read_file` / `write_note` (sandboxed to chosen roots, default `~/Documents/jarvis`), `open_app` (hard allowlist: chrome, spotify, …), `clipboard_get` / `clipboard_set` (set is `confirm`). **No shell tool exists. Not in V2, not ever.**
+**OS access (2F):** fixed function set only — `read_file` / `write_note` (sandboxed to chosen roots, default `~/Documents/aria`), `open_app` (hard allowlist: chrome, spotify, …), `clipboard_get` / `clipboard_set` (set is `confirm`). **No shell tool exists. Not in V2, not ever.**
 
 **Prompt injection:** tool results and page content are data, framed as such in the model context; a tool result can never approve another tool; browser page content never triggers tools directly.
 
@@ -655,8 +655,8 @@ Scope guard: **no tools, no memory, no mobile, no LangGraph.** If a V2 idea appe
 |---|---|---|---|
 | M1 — Skeleton | 1 | Repo per §4; venv; `.env`; FastAPI boots; SQLite migrations run; WS echo works; shared-ui renders in browser tab | `uvicorn backend.main:app` up; `/health` 200; UI connects to WS and prints events |
 | M2 — Audio I/O | 1–2 | `audio.py`: mic 16kHz capture + speaker 24kHz playback (sounddevice/WASAPI) | Record 5s, play it back, clean audio on Windows |
-| M3 — Wake word | 1 | `wake.py` Porcupine loop with built-in "Jarvis" keyword; wake → event on WS | Say "Hey Jarvis" 10× → 10 wake events; typing/TV noise → 0 wakes in 10 min |
-| M4 — Realtime loop | 2 | `realtime.py`: session open on wake, stream mic audio, play response deltas; conversation window (60s) | "Hey Jarvis, what's the weather?" → **spoken answer < 2s**; 5-turn follow-up conversation works |
+| M3 — Wake word | 1 | `wake.py` Porcupine loop with custom "aria" keyword (train free in Picovoice Console, download `.ppn`); wake → event on WS | Say "Hey Aria" 10× → 10 wake events; typing/TV noise → 0 wakes in 10 min |
+| M4 — Realtime loop | 2 | `realtime.py`: session open on wake, stream mic audio, play response deltas; conversation window (60s) | "Hey Aria, what's the weather?" → **spoken answer < 2s**; 5-turn follow-up conversation works |
 | M5 — UI transcript | 1 | Electron (or browser tab) shows state ring + live transcript + assistant reply | Full convo visible in UI; states idle/listening/speaking correct |
 | M6 — Persistence | 0.5 | `sessions`, `turns`, `costs` rows written (Realtime usage events → costs) | 20-command session → 1 session row, 40 turn rows, costs > 0 |
 | M7 — Soak + tune | 1 | `scripts/soak_test_wake.py`: 1 hr ambient audio (music/TV) → count false wakes; tune sensitivity | **< 1 false wake/hr**; 20 consecutive commands, zero crashes, memory stable |
@@ -761,17 +761,17 @@ NOTION_TOKEN=                    # 2B
 GOOGLE_CLIENT_ID=                # 2B (OAuth; refresh token lives in OS keyring)
 GOOGLE_CLIENT_SECRET=
 
-# Jarvis
-JARVIS_DB_PATH=./data/jarvis.db
-JARVIS_HOST=127.0.0.1            # 0.0.0.0 only when mobile lands (2G)
-JARVIS_PORT=8741
-JARVIS_DEVICE_TOKEN=             # 2G pairing secret
-JARVIS_REALTIME_MODEL=gpt-4o-realtime-preview
-JARVIS_BRAIN_MODEL=gpt-4o        # fallback brain; 'claude' also supported
-JARVIS_EMBED_MODEL=text-embedding-3-small
-JARVIS_WAKE_SENSITIVITY=0.6
-JARVIS_FOLLOWUP_WINDOW_S=60
-JARVIS_LOG_LEVEL=INFO
+# A.R.I.A.
+ARIA_DB_PATH=./data/aria.db
+ARIA_HOST=127.0.0.1            # 0.0.0.0 only when mobile lands (2G)
+ARIA_PORT=8741
+ARIA_DEVICE_TOKEN=             # 2G pairing secret
+ARIA_REALTIME_MODEL=gpt-4o-realtime-preview
+ARIA_BRAIN_MODEL=gpt-4o        # fallback brain; 'claude' also supported
+ARIA_EMBED_MODEL=text-embedding-3-small
+ARIA_WAKE_SENSITIVITY=0.6
+ARIA_FOLLOWUP_WINDOW_S=60
+ARIA_LOG_LEVEL=INFO
 ```
 
 ### 17.3 Monthly cost estimate (personal use, ~20 active conversation-min/day — verify current pricing before relying on this)

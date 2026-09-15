@@ -1,4 +1,4 @@
-# Jarvis
+# A.R.I.A.
 
 Voice-first personal assistant. Spec: [`docs/MASTER_SPEC.md`](docs/MASTER_SPEC.md) · UI: [`docs/UI_SPEC.md`](docs/UI_SPEC.md) · Roadmap: [`docs/ROADMAP.md`](docs/ROADMAP.md)
 

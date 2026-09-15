@@ -48,7 +48,7 @@ export default function App() {
       <main className="stage">
         <StatusOrb state={orbState} size={280} />
         <p className="status-label" style={{ color: STATE_COLORS[orbState] }} aria-live="polite">
-          {orbState === "idle" ? "Say “Hey Jarvis”" : `${orbState[0].toUpperCase()}${orbState.slice(1)}…`}
+          {orbState === "idle" ? "Say “Hey Aria”" : `${orbState[0].toUpperCase()}${orbState.slice(1)}…`}
         </p>
         <p className="status-hint mono">{HINTS[orbState]}</p>
 
