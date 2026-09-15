@@ -1,0 +1,480 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Jarvis Interface Concept</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --ground:#060A11; --panel:#0C1320; --panel-2:#101A2B;
+    --line:rgba(140,180,240,.14);
+    --text:#E6EEF9; --dim:#8FA3C0;
+    --idle:#7E93B4; --listening:#3AE0FF; --thinking:#A78BFA;
+    --speaking:#3FDFA8; --warning:#FFC46B;
+    --fd:"Chakra Petch","IBM Plex Sans",sans-serif;
+    --fb:"IBM Plex Sans",system-ui,sans-serif;
+    --fm:"JetBrains Mono",monospace;
+    --r:16px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{color-scheme:dark}
+  body{
+    background:var(--ground); color:var(--text);
+    font:400 15px/1.55 var(--fb);
+    padding:40px clamp(16px,4vw,56px) 72px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1240px;margin:0 auto}
+
+  /* ---------- page header ---------- */
+  .eyebrow{font:500 11px/1 var(--fm);letter-spacing:.14em;color:var(--listening);text-transform:uppercase}
+  h1{font:700 clamp(30px,4.4vw,46px)/1.1 var(--fd);letter-spacing:.01em;margin:14px 0 10px;max-width:16ch}
+  .lede{color:var(--dim);max-width:58ch}
+  .lede strong{color:var(--text);font-weight:500}
+
+  /* ---------- state switcher ---------- */
+  .switcher{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:30px 0 22px}
+  .switcher-label{font:500 11px/1 var(--fm);letter-spacing:.1em;color:var(--dim);text-transform:uppercase;margin-right:4px}
+  .chip{
+    font:600 13px/1 var(--fb);color:var(--dim);
+    background:var(--panel);border:1px solid var(--line);border-radius:999px;
+    padding:9px 16px;cursor:pointer;transition:all .12s ease;
+  }
+  .chip:hover{color:var(--text);border-color:rgba(140,180,240,.35)}
+  .chip[aria-pressed="true"]{color:#04121A;background:var(--listening);border-color:var(--listening)}
+  .chip:focus-visible{outline:2px solid var(--listening);outline-offset:2px}
+
+  /* ---------- studio grid ---------- */
+  .studio{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(280px,1fr);gap:22px;align-items:start}
+  @media (max-width:940px){.studio{grid-template-columns:1fr}}
+
+  .frame{
+    background:var(--panel);border:1px solid var(--line);border-radius:20px;
+    overflow:hidden;
+  }
+  .frame-tag{font:500 11px/1 var(--fm);letter-spacing:.1em;color:var(--dim);text-transform:uppercase;margin:0 2px 10px}
+
+  /* ---------- topbar (in-frame) ---------- */
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:12px 18px;border-bottom:1px solid var(--line);
+    background:rgba(140,180,240,.03);
+  }
+  .conn{display:flex;align-items:center;gap:9px;font:500 12px/1 var(--fm);color:var(--dim)}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--speaking);box-shadow:0 0 8px var(--speaking)}
+  .tbtns{display:flex;gap:6px}
+  .tbtn{
+    display:grid;place-items:center;width:32px;height:32px;border-radius:9px;
+    background:transparent;border:1px solid transparent;color:var(--dim);cursor:pointer;
+  }
+  .tbtn:hover{color:var(--text);border-color:var(--line);background:var(--panel-2)}
+  .tbtn:focus-visible{outline:2px solid var(--listening);outline-offset:1px}
+  .tbtn.muted{color:var(--warning);border-color:var(--warning)}
+
+  /* ---------- stage / orb ---------- */
+  .stage{display:flex;flex-direction:column;align-items:center;padding:34px 16px 26px}
+  .orb-wrap{position:relative;display:grid;place-items:center}
+  canvas{display:block;max-width:100%}
+  .status-label{font:600 21px/1 var(--fd);margin-top:18px;transition:color .35s ease}
+  .status-hint{font:400 12px/1 var(--fm);color:var(--dim);margin-top:9px;letter-spacing:.04em}
+
+  /* ---------- transcript ---------- */
+  .thread{max-width:640px;width:100%;margin:0 auto;padding:6px 22px 24px;display:flex;flex-direction:column;gap:14px}
+  .msg{display:flex;flex-direction:column;gap:4px}
+  .msg .who{font:500 10.5px/1 var(--fm);letter-spacing:.1em;color:var(--dim);text-transform:uppercase}
+  .msg.user{align-items:flex-end;text-align:right}
+  .msg.user .bubble{
+    background:var(--panel-2);border:1px solid var(--line);border-radius:14px 14px 4px 14px;
+    padding:9px 14px;max-width:75%;color:var(--dim);
+  }
+  .msg.assistant{align-items:flex-start}
+  .msg.assistant .say{max-width:52ch}
+  .stamp{font:400 11px/1 var(--fm);color:var(--dim);font-variant-numeric:tabular-nums;opacity:.7}
+
+  /* ---------- tool cards ---------- */
+  .card{
+    background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r);
+    padding:14px 16px;width:100%;max-width:380px;
+  }
+  .card + .say{margin-top:10px}
+  .weather{display:flex;align-items:center;gap:16px}
+  .weather .icon{color:var(--listening);flex:none;display:grid;place-items:center}
+  .weather .temp{font:700 38px/1 var(--fd);font-variant-numeric:tabular-nums}
+  .weather .meta{display:flex;flex-direction:column;gap:3px}
+  .weather .city{font:600 14px/1.2 var(--fb)}
+  .weather .sub{font:400 12px/1.4 var(--fb);color:var(--dim)}
+  .weather .hi-lo{margin-left:auto;text-align:right;font:500 11.5px/1.7 var(--fm);color:var(--dim);font-variant-numeric:tabular-nums;white-space:nowrap}
+
+  .confirm-card{border-color:rgba(255,196,107,.4)}
+  .card-kicker{font:500 10.5px/1 var(--fm);letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:8px}
+  .confirm-card .card-kicker{color:var(--warning)}
+  .confirm-card .action{font:500 14px/1.45 var(--fb)}
+  .row-btns{display:flex;gap:10px;margin-top:13px}
+  .btn{
+    font:600 13px/1 var(--fb);border-radius:9px;padding:9px 16px;cursor:pointer;
+    border:1px solid var(--line);background:transparent;color:var(--text);transition:all .12s ease;
+  }
+  .btn.primary{background:var(--listening);border-color:var(--listening);color:#04121A}
+  .btn.primary:hover{filter:brightness(1.12)}
+  .btn.ghost:hover{border-color:rgba(140,180,240,.4)}
+  .btn:focus-visible{outline:2px solid var(--listening);outline-offset:2px}
+  .result-line{font:500 13px/1 var(--fm);color:var(--speaking);margin-top:13px}
+
+  .error-card .card-kicker{color:var(--warning)}
+  .error-card .action{color:var(--dim);font-size:13.5px}
+  .error-card .action strong{color:var(--text);font-weight:500}
+
+  .briefing .row{display:flex;align-items:center;gap:10px;padding:7px 0;border-top:1px solid var(--line);font-size:13.5px}
+  .briefing .row:first-of-type{border-top:0;padding-top:2px}
+  .briefing .row svg{color:var(--listening);flex:none}
+  .briefing .row .r-label{color:var(--dim);font:500 11px/1 var(--fm);letter-spacing:.06em;text-transform:uppercase;width:74px;flex:none}
+  .briefing .play{margin-left:auto;display:flex;align-items:center;gap:7px;font:500 11.5px/1 var(--fm);color:var(--listening)}
+
+  /* ---------- phone ---------- */
+  .right-col{display:flex;flex-direction:column;gap:22px}
+  .phone-col{display:flex;justify-content:center}
+  .phone{
+    width:272px;max-width:100%;background:var(--panel);border:1px solid var(--line);
+    border-radius:38px;padding:10px 12px 16px;position:relative;
+  }
+  .notch{width:84px;height:22px;background:var(--ground);border-radius:999px;margin:2px auto 8px}
+  .phone .topbar{border:0;background:transparent;padding:2px 8px 0}
+  .phone .brand{font:600 14px/1 var(--fd);letter-spacing:.04em}
+  .phone .stage{padding:16px 0 6px}
+  .phone .status-label{font-size:16px;margin-top:12px}
+  .phone .thread{padding:2px 6px 8px;gap:10px}
+  .phone .card{padding:11px 13px;max-width:none}
+  .phone .weather .temp{font-size:28px}
+  .mic-zone{display:flex;justify-content:center;padding-top:8px}
+  .mic-btn{
+    width:84px;height:84px;border-radius:50%;border:1px solid var(--listening);
+    background:radial-gradient(circle at 50% 40%, rgba(58,224,255,.28), rgba(58,224,255,.06));
+    color:var(--listening);display:grid;place-items:center;cursor:pointer;
+    box-shadow:0 0 26px rgba(58,224,255,.25);
+    transition:transform .12s ease, background .12s ease;
+  }
+  .mic-btn:active,.mic-btn.recording{transform:scale(1.06);background:radial-gradient(circle at 50% 40%, rgba(58,224,255,.55), rgba(58,224,255,.15))}
+  .mic-btn:focus-visible{outline:2px solid var(--listening);outline-offset:4px}
+  .mic-hint{display:block;text-align:center;font:500 10.5px/1 var(--fm);letter-spacing:.12em;color:var(--dim);text-transform:uppercase;margin-top:10px}
+
+  /* ---------- component strip ---------- */
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:22px;margin-top:22px}
+  .strip .card{max-width:none}
+  .sec-title{font:500 11px/1 var(--fm);letter-spacing:.12em;color:var(--dim);text-transform:uppercase;margin:36px 0 12px}
+
+  /* ---------- footer ---------- */
+  footer{margin-top:52px;border-top:1px solid var(--line);padding-top:22px;display:flex;flex-wrap:wrap;gap:18px 28px;align-items:center}
+  .swatches{display:flex;gap:14px;flex-wrap:wrap}
+  .sw{display:flex;align-items:center;gap:7px;font:400 11px/1 var(--fm);color:var(--dim)}
+  .sw i{width:13px;height:13px;border-radius:4px;display:inline-block;border:1px solid var(--line)}
+  .foot-note{color:var(--dim);font-size:13px}
+  .foot-note code{font:500 12px var(--fm);color:var(--listening)}
+
+  @media (prefers-reduced-motion: reduce){
+    *{transition:none !important}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">Jarvis · Voice-first assistant</p>
+    <h1>The screen is a status display</h1>
+    <p class="lede">Voice does the work — the screen's only job is to answer <strong>“what is Jarvis doing right now?”</strong> from across the room. The orb carries the state; transcript and cards stay glanceable and never block.</p>
+  </header>
+
+  <div class="switcher" role="group" aria-label="Orb state">
+    <span class="switcher-label">Drive the orb</span>
+    <button class="chip" data-state="idle" aria-pressed="false">Idle</button>
+    <button class="chip" data-state="listening" aria-pressed="true">Listening</button>
+    <button class="chip" data-state="thinking" aria-pressed="false">Thinking</button>
+    <button class="chip" data-state="speaking" aria-pressed="false">Speaking</button>
+  </div>
+
+  <div class="studio">
+
+    <!-- ===================== DESKTOP ===================== -->
+    <section aria-label="Desktop mockup">
+      <p class="frame-tag">Desktop · Electron shell</p>
+      <div class="frame">
+        <div class="topbar">
+          <span class="conn"><span class="dot"></span>connected · desktop</span>
+          <span class="tbtns">
+            <button class="tbtn" id="muteBtn" aria-label="Toggle mute" title="Mute">
+              <svg id="micIcon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/></svg>
+            </button>
+            <button class="tbtn" aria-label="Settings" title="Settings">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg>
+            </button>
+          </span>
+        </div>
+
+        <div class="stage">
+          <div class="orb-wrap"><canvas id="orbDesktop" width="300" height="300" style="width:300px;height:300px" aria-hidden="true"></canvas></div>
+          <p class="status-label" id="labelDesktop" aria-live="polite">Listening…</p>
+          <p class="status-hint" id="hintDesktop">streaming · realtime</p>
+        </div>
+
+        <div class="thread">
+          <div class="msg user">
+            <span class="who">You · <span class="stamp">14:32</span></span>
+            <span class="bubble">What's the weather like outside?</span>
+          </div>
+          <div class="msg assistant">
+            <span class="who">Jarvis · <span class="stamp">14:32</span></span>
+            <div class="card weather">
+              <span class="icon">
+                <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5 5l1.6 1.6M17.4 17.4L19 19M19 5l-1.6 1.6M6.6 17.4L5 19"/></svg>
+              </span>
+              <span class="temp">29°</span>
+              <span class="meta">
+                <span class="city">Mumbai</span>
+                <span class="sub">Haze · feels 34°</span>
+              </span>
+              <span class="hi-lo">H 33°<br>L 26°</span>
+            </div>
+            <p class="say">It's 29 degrees and hazy in Mumbai — the high hits 33 this afternoon, so keep the afternoon walk short.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== RIGHT COLUMN ===================== -->
+    <div class="right-col">
+
+      <section class="phone-col" aria-label="Mobile mockup">
+        <div>
+          <p class="frame-tag" style="text-align:center">Mobile · Capacitor</p>
+          <div class="phone">
+            <div class="notch" aria-hidden="true"></div>
+            <div class="topbar">
+              <span class="conn"><span class="dot"></span></span>
+              <span class="brand">Jarvis</span>
+              <button class="tbtn" aria-label="Settings">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg>
+              </button>
+            </div>
+            <div class="stage">
+              <canvas id="orbPhone" width="150" height="150" style="width:150px;height:150px" aria-hidden="true"></canvas>
+              <p class="status-label" id="labelPhone" aria-live="polite">Listening…</p>
+            </div>
+            <div class="thread">
+              <div class="card weather">
+                <span class="icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5 5l1.6 1.6M17.4 17.4L19 19M19 5l-1.6 1.6M6.6 17.4L5 19"/></svg>
+                </span>
+                <span class="temp">29°</span>
+                <span class="meta">
+                  <span class="city">Mumbai</span>
+                  <span class="sub">Haze</span>
+                </span>
+              </div>
+            </div>
+            <div class="mic-zone">
+              <button class="mic-btn" id="micBtn" aria-label="Hold to talk">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/></svg>
+              </button>
+            </div>
+            <span class="mic-hint">hold to talk</span>
+          </div>
+        </div>
+      </section>
+
+      <section aria-label="Component states">
+        <p class="sec-title">Component states</p>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="card confirm-card">
+            <p class="card-kicker">Confirm · Notion</p>
+            <p class="action">Create page “Voice notes” in <strong style="color:var(--text);font-weight:500">Product HQ</strong>?</p>
+            <div class="row-btns" id="confirmRow">
+              <button class="btn primary" data-confirm="approve">Approve</button>
+              <button class="btn ghost" data-confirm="cancel">Cancel</button>
+            </div>
+          </div>
+
+          <div class="card error-card">
+            <p class="card-kicker">Voice service</p>
+            <p class="action"><strong>Realtime unreachable.</strong> Retrying in 5s…</p>
+            <div class="row-btns">
+              <button class="btn ghost">Retry now</button>
+            </div>
+          </div>
+
+          <div class="card briefing">
+            <p class="card-kicker">07:00 · Morning briefing</p>
+            <div class="row"><span class="r-label">Weather</span>29° haze, high 33°
+              <span class="play"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l13-7.5z"/></svg>0:45</span>
+            </div>
+            <div class="row"><span class="r-label">Calendar</span>2 events · first at 10:30</div>
+            <div class="row"><span class="r-label">Tasks</span>3 due today</div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <footer>
+    <div class="swatches" aria-label="Palette">
+      <span class="sw"><i style="background:#060A11"></i>#060A11 ground</span>
+      <span class="sw"><i style="background:#0C1320"></i>#0C1320 panel</span>
+      <span class="sw"><i style="background:#3AE0FF"></i>listening</span>
+      <span class="sw"><i style="background:#A78BFA"></i>thinking</span>
+      <span class="sw"><i style="background:#3FDFA8"></i>speaking</span>
+      <span class="sw"><i style="background:#FFC46B"></i>warning</span>
+    </div>
+    <p class="foot-note">Tokens &amp; component specs: <code>docs/UI_SPEC.md</code> · Type: Chakra Petch / IBM Plex Sans / JetBrains Mono</p>
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var STATES = {
+    idle:      {color:"#7E93B4", energy:.18, label:"Say “Hey Jarvis”", hint:"wake word armed · mic is local-only"},
+    listening: {color:"#3AE0FF", energy:.85, label:"Listening…",           hint:"streaming · realtime"},
+    thinking:  {color:"#A78BFA", energy:.55, label:"Thinking…",            hint:"working on it"},
+    speaking:  {color:"#3FDFA8", energy:1,   label:"Speaking…",            hint:"playing response"}
+  };
+  var state = "listening";
+  var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function hexA(hex, a){
+    var n = parseInt(hex.slice(1), 16);
+    return "rgba(" + (n>>16&255) + "," + (n>>8&255) + "," + (n&255) + "," + Math.max(0, Math.min(1, a)) + ")";
+  }
+
+  function makeOrb(canvas){
+    var size = parseInt(canvas.getAttribute("width"), 10);
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = size * dpr; canvas.height = size * dpr;
+    canvas.style.width = size + "px"; canvas.style.height = size + "px";
+    var ctx = canvas.getContext("2d");
+    ctx.scale(dpr, dpr);
+    var TAU = 6.2832, R = size*0.42;
+    var count = Math.max(90, Math.round(size*size*0.0062));
+    var dots = [];
+    for(var i=0;i<count;i++){
+      dots.push({
+        r: Math.sqrt((i+0.5)/count),      // normalized radius 0..1 (sunflower spiral)
+        a: i*2.39996,                     // golden angle
+        s: Math.random()*TAU              // per-dot phase, keeps it organic
+      });
+    }
+    return function draw(t){
+      var S = STATES[state], c = S.color, e = S.energy;
+      var cx = size/2, cy = size/2;
+      ctx.clearRect(0,0,size,size);
+
+      var g = ctx.createRadialGradient(cx,cy,R*0.1, cx,cy,R*1.7);
+      g.addColorStop(0, hexA(c, .10 + .26*e));
+      g.addColorStop(1, hexA(c, 0));
+      ctx.fillStyle = g; ctx.fillRect(0,0,size,size);
+
+      var breathe = 1 + .018*Math.sin(t*0.8);
+      var dotR = Math.max(1.1, size*0.0068);
+
+      for(var i=0;i<dots.length;i++){
+        var d = dots[i];
+        var ang = d.a, wob = 0, alpha = 0;
+        var base = R*(0.16 + 0.84*d.r)*breathe;
+        var env = .3 + .7*d.r;            // edge moves more than the core
+
+        if(state === "idle"){
+          wob = 3.2*Math.sin(t*0.8 + d.r*4.5 + d.s)*Math.sin(t*0.45 + ang*2 + d.s*0.7);
+          alpha = .16 + .38*d.r;
+        } else if(state === "listening"){
+          var beat = .5 + .5*Math.sin(t*3.3 + d.s);
+          var w1 = Math.sin(ang*3 + t*4.4 + d.r*5.5);
+          wob = (2.5 + 9*beat)*w1*env;
+          alpha = .2 + .5*d.r + .2*beat*Math.abs(w1);
+        } else if(state === "thinking"){
+          ang += t*1.7*(.35 + .85*d.r);   // inner dots orbit slower → vortex
+          wob = 3.6*Math.sin(t*3.1 + d.r*8 + d.s)*env;
+          alpha = .18 + .5*d.r;
+        } else {                          // speaking: ripples travel outward
+          var rp = Math.sin(9*d.r - t*6.2 + ang*2 + d.s*.4);
+          wob = 7.5*rp*env;
+          alpha = .22 + .5*d.r + .18*Math.abs(rp);
+        }
+
+        var rr = base + wob;
+        var x = cx + Math.cos(ang)*rr;
+        var y = cy + Math.sin(ang)*rr;
+        ctx.beginPath();
+        ctx.arc(x, y, dotR*(0.8 + 0.4*d.r), 0, TAU);
+        ctx.fillStyle = hexA(c, Math.min(1, alpha));
+        ctx.fill();
+      }
+    };
+  }
+
+  var orbs = [
+    makeOrb(document.getElementById("orbDesktop")),
+    makeOrb(document.getElementById("orbPhone"))
+  ];
+
+  function render(){
+    var t = performance.now()/1000;
+    for(var i=0;i<orbs.length;i++) orbs[i](t);
+  }
+
+  if(reduceMotion){
+    render();
+  } else {
+    (function loop(){ render(); requestAnimationFrame(loop); })();
+  }
+
+  var chips = document.querySelectorAll(".chip");
+  var labels = [document.getElementById("labelDesktop"), document.getElementById("labelPhone")];
+  var hint = document.getElementById("hintDesktop");
+
+  function setState(next){
+    state = next;
+    var S = STATES[next];
+    chips.forEach(function(ch){
+      ch.setAttribute("aria-pressed", String(ch.dataset.state === next));
+    });
+    labels.forEach(function(l){
+      l.textContent = S.label;
+      l.style.color = S.color;
+    });
+    hint.textContent = S.hint;
+    if(reduceMotion) render();
+  }
+
+  chips.forEach(function(ch){
+    ch.addEventListener("click", function(){ setState(ch.dataset.state); });
+  });
+
+  var muteBtn = document.getElementById("muteBtn");
+  muteBtn.addEventListener("click", function(){
+    var on = muteBtn.classList.toggle("muted");
+    muteBtn.setAttribute("aria-label", on ? "Unmute" : "Mute");
+  });
+
+  var micBtn = document.getElementById("micBtn");
+  ["pointerdown","pointerup","pointerleave"].forEach(function(ev){
+    micBtn.addEventListener(ev, function(){
+      micBtn.classList.toggle("recording", ev === "pointerdown");
+    });
+  });
+
+  var confirmRow = document.getElementById("confirmRow");
+  confirmRow.addEventListener("click", function(ev){
+    var b = ev.target.closest("button[data-confirm]");
+    if(!b) return;
+    var p = document.createElement("p");
+    p.className = "result-line";
+    p.textContent = b.dataset.confirm === "approve"
+      ? "Approved · creating page…"
+      : "Cancelled · nothing sent to Notion";
+    confirmRow.replaceWith(p);
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+:root {
+  /* surfaces */
+  --ground: #060a11;
+  --panel: #0c1320;
+  --panel-2: #101a2b;
+  --line: rgba(140, 180, 240, 0.14);
+
+  /* text */
+  --text: #e6eef9;
+  --dim: #8fa3c0;
+
+  /* state accents (UI_SPEC.md §2) */
+  --idle: #7e93b4;
+  --listening: #3ae0ff;
+  --thinking: #a78bfa;
+  --speaking: #3fdfa8;
+  --warning: #ffc46b;
+
+  /* type */
+  --font-display: "Chakra Petch", "IBM Plex Sans", sans-serif;
+  --font-body: "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  --r-sm: 10px;
+  --r-md: 16px;
+  --r-lg: 24px;
+  --dur-1: 120ms;
+  --dur-2: 200ms;
+  --dur-3: 350ms;
+}
