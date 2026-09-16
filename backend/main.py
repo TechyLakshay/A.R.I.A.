@@ -1,3 +1,4 @@
+import asyncio
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -5,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from backend.api import rest, ws
 from backend.core.db import connect, migrate
+from backend.core.wake_loop import start as start_wake_loop
 
 
 @asynccontextmanager
@@ -12,6 +14,7 @@ async def lifespan(app: FastAPI):
     ran = migrate(connect())
     if ran:
         print(f"applied migrations: {', '.join(ran)}")
+    start_wake_loop(asyncio.get_running_loop())
     yield
 
 

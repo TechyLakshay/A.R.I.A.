@@ -1,7 +1,8 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
+from backend.core.events import broadcast, clients
+
 router = APIRouter()
-clients: set[WebSocket] = set()
 
 
 @router.websocket("/ws")
