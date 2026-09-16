@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     db_path: str = "./data/aria.db"
     host: str = "127.0.0.1"
     port: int = 8741
+    wake_model: str = "hey_jarvis"   # openwakeword name, or path to a custom .onnx/.tflite
+    wake_threshold: float = 0.5
     log_level: str = "INFO"
 
 

@@ -31,7 +31,7 @@ flowchart TB
 
     subgraph Backend["Python FastAPI (one process)"]
         subgraph VG["Voice gateway"]
-            WAKE["Porcupine wake word<br/>(desktop mic, V1)"]
+            WAKE["openWakeWord detector<br/>(desktop mic, V1)"]
             RT["OpenAI Realtime client<br/>server VAD + STT + LLM + TTS in one WebSocket"]
         end
         ORCH["Session orchestrator<br/>state machine + event bus → WS clients"]
@@ -73,7 +73,7 @@ flowchart TB
 
 | Layer | Choice | Verdict | One-line justification |
 |---|---|---|---|
-| Wake word | Porcupine | Keep | On-device, ~$0 CPU; "aria" needs a free custom keyword (Picovoice Console, ~2 min to train). |
+| Wake word | openWakeWord | Keep (switched from Porcupine) | Open-source, on-device, ~$0 forever; ships with a pretrained "hey jarvis" model, and "hey aria" trains free at openwakeword.com. See flag #8. |
 | VAD | Silero VAD | Defer to 2G | Realtime's server VAD already owns turn detection; Silero's upload-gating only pays off once the mic uplink crosses a network (2G mobile). |
 | Primary voice loop | OpenAI Realtime API | Keep | STT+LLM+TTS in one socket ≈ sub-second responses; nothing you can assemble from parts beats it on latency. |
 | Fallback STT | Deepgram Nova-3 | Keep, built on demand | See flag #1 below — serves the fallback text brain, not the primary loop; build only when a Realtime outage demands it (flag #7). |
@@ -100,6 +100,7 @@ flowchart TB
 5. **Mobile gets push-to-talk, not wake word.** Porcupine does ship mobile/web SDKs, but PTT matches the "big mic button" UI, avoids battery drain, and ships a week earlier. Wake-on-mobile is a post-V2 option.
 6. **Electron can't run on mobile — handled by structure:** all UI lives in `shared-ui/`; Electron and Capacitor are thin shells that load it. No shared component is ever written inside `desktop/`.
 7. **V1 trims (this revision).** Silero VAD is out of V1 — Realtime's server VAD owns turn detection, and streaming the occasional second of silence costs less (money and code) than a local VAD module. Silero returns in 2G to gate the mobile audio uplink. The fallback brain (Deepgram → GPT-4o → TTS) is likewise no longer scheduled in 2B: build it the first time a Realtime outage or tool-heavy workload actually bites — it's ~1 day of work from pieces already in the stack.
+8. **Wake word switched: Porcupine → openWakeWord (2026-09-16).** Picovoice's free tier was discontinued (AccessKeys stopped working 2026-06-30), so Porcupine is trial-only — a dead end for a project that becomes SaaS. openWakeWord is Apache-2.0, on-device, CPU-light, and free for commercial use. Interim: pretrained "hey jarvis" model (works day 1); train the real "hey aria" free at openwakeword.com/train and drop the model file in — config points at it, no code change.
 
 ---
 
@@ -655,7 +656,7 @@ Scope guard: **no tools, no memory, no mobile, no LangGraph.** If a V2 idea appe
 |---|---|---|---|
 | M1 — Skeleton | 1 | Repo per §4; venv; `.env`; FastAPI boots; SQLite migrations run; WS echo works; shared-ui renders in browser tab | `uvicorn backend.main:app` up; `/health` 200; UI connects to WS and prints events |
 | M2 — Audio I/O | 1–2 | `audio.py`: mic 16kHz capture + speaker 24kHz playback (sounddevice/WASAPI) | Record 5s, play it back, clean audio on Windows |
-| M3 — Wake word | 1 | `wake.py` Porcupine loop with custom "aria" keyword (train free in Picovoice Console, download `.ppn`); wake → event on WS | Say "Hey Aria" 10× → 10 wake events; typing/TV noise → 0 wakes in 10 min |
+| M3 — Wake word | 1 | `wake.py` openWakeWord loop (pretrained "hey jarvis" interim; "hey aria" via openwakeword.com/train); wake → event on WS | Say the wake phrase 10× → 10 wake events; typing/TV noise → 0 wakes in 10 min |
 | M4 — Realtime loop | 2 | `realtime.py`: session open on wake, stream mic audio, play response deltas; conversation window (60s) | "Hey Aria, what's the weather?" → **spoken answer < 2s**; 5-turn follow-up conversation works |
 | M5 — UI transcript | 1 | Electron (or browser tab) shows state ring + live transcript + assistant reply | Full convo visible in UI; states idle/listening/speaking correct |
 | M6 — Persistence | 0.5 | `sessions`, `turns`, `costs` rows written (Realtime usage events → costs) | 20-command session → 1 session row, 40 turn rows, costs > 0 |
@@ -693,7 +694,7 @@ Parallelization: 2A/2B can overlap; 2D–2F are independent after 2B; 2G needs t
 | 3 | **Windows audio stack pain** — WASAPI device switching, sample-rate mismatches | M×M | M2 is a dedicated milestone with its own acceptance; one audio module owns all device handling |
 | 4 | **Echo/bleed: assistant hears itself on speakers** | H×M | V1: mute mic during SPEAKING (no AEC); document headphones as best experience; Realtime's turn detection tuned via session params. True barge-in needs AEC — defer |
 | 5 | **Scope creep — V2 features leaking into V1** | H×M | This doc is the scope; each phase gets a `docs/phases/` checklist written only when it starts; `claude.md` restates current phase |
-| 6 | **False wakes in ambient noise** | M×M | Porcupine sensitivity tuning + M7 soak test with real room noise; the 60s follow-up window bounds open-mic streaming cost |
+| 6 | **False wakes in ambient noise** | M×M | Wake threshold tuning (§17.2) + M7 soak test with real room noise; the 60s follow-up window bounds open-mic streaming cost |
 | 7 | **Playwright fragility on target sites** (selector rot, bot detection) | M×M | Keep browser tool narrow (read-only news/prices on allowlisted domains); log every failed selector to fix fast |
 | 8 | **Google OAuth setup swallows a week** | M×M | Calendar first (simplest scope), OAuth client in "testing" mode is fine for personal use; Gmail read-only last |
 | 9 | **sqlite-vec edge cases** (extension load on Windows, filter syntax) | L×M | Pin version, load-path in one function in `db.py`, tiny smoke test at M1; fallback = plain cosine in Python (fine at personal scale) |
@@ -725,7 +726,8 @@ Parallelization: 2A/2B can overlap; 2D–2F are independent after 2B; 2G needs t
 | `fastapi` / `uvicorn[standard]` | ≥0.115 / ≥0.30 | API + WS server |
 | `openai` | ≥1.50 | Realtime WS, GPT-4o, embeddings, TTS |
 | `deepgram-sdk` | ≥4.x | fallback STT — built on demand (§3.1 flag 7) |
-| `pvporcupine` | ≥3.x | wake word (needs `PICOVOICE_ACCESS_KEY`) |
+| `openwakeword` | ≥0.6 | wake word (onnx backend; free incl. commercial) |
+| `onnxruntime` | ≥1.18 | openWakeWord inference |
 | `silero-vad` | ≥5.x | VAD — 2G only (mobile upload-gating) |
 | `sounddevice` / `numpy` | ≥0.5 / ≥2.x | audio I/O (WASAPI on Windows) |
 | `sqlite-vec` | ≥0.1.6 | vector search extension |
@@ -753,8 +755,7 @@ Parallelization: 2A/2B can overlap; 2D–2F are independent after 2B; 2G needs t
 ```bash
 # Providers
 OPENAI_API_KEY=
-DEEPGRAM_API_KEY=
-PICOVOICE_ACCESS_KEY=            # free at console.picovoice.ai
+DEEPGRAM_API_KEY=            # free at console.picovoice.ai
 TAVILY_API_KEY=                  # 2B
 OPENWEATHER_API_KEY=             # 2B
 NOTION_TOKEN=                    # 2B
@@ -766,10 +767,12 @@ ARIA_DB_PATH=./data/aria.db
 ARIA_HOST=127.0.0.1            # 0.0.0.0 only when mobile lands (2G)
 ARIA_PORT=8741
 ARIA_DEVICE_TOKEN=             # 2G pairing secret
+ARIA_WAKE_MODEL=hey_jarvis            # or path to a custom "hey aria" .onnx/.tflite from openwakeword.com
+ARIA_WAKE_THRESHOLD=0.5
 ARIA_REALTIME_MODEL=gpt-4o-realtime-preview
 ARIA_BRAIN_MODEL=gpt-4o        # fallback brain; 'claude' also supported
 ARIA_EMBED_MODEL=text-embedding-3-small
-ARIA_WAKE_SENSITIVITY=0.6
+ARIA_FOLLOWUP_WINDOW_S=60
 ARIA_FOLLOWUP_WINDOW_S=60
 ARIA_LOG_LEVEL=INFO
 ```
@@ -786,7 +789,7 @@ ARIA_LOG_LEVEL=INFO
 | Deepgram Nova-3 (fallback STT) | < $2 | |
 | Tavily | $0–30 | free tier 1,000 searches/mo first |
 | OpenWeather / Notion | $0 | free tiers |
-| Picovoice Porcupine | $0 personal | **Commercial license required for SaaS** — get a quote before launch, budget line item |
+| openWakeWord | $0 | Apache-2.0 — free incl. commercial/SaaS use |
 | **Total (personal)** | **~$70–230** | drops to **~$25–80** on mini-realtime |
 
 **Cost levers, in order of impact:** mini-realtime model → shorter follow-up window (less billed idle) → mini tier for briefing composition → Tavily free tier.
