@@ -1,4 +1,4 @@
-# A.R.I.A. UI Spec
+# A.R.I.A. UI Spec 
 
 Companion to `MASTER_SPEC.md` §4 (`shared-ui/`). Visual reference: the published "A.R.I.A. Interface Concept" mockup. This doc is the build source of truth; the mockup is the feel.
 
@@ -57,7 +57,7 @@ Type scale (do not deviate): 32/28 display · 20 status label · 15 body · 13 s
 | `BriefingCard` | — | 07:00 proactive card: weather line, next event, tasks due, Play button. Dismissable. |
 | `SettingsSheet` | — | Right slide-over. Sections: Connection (wake sensitivity, follow-up window), Memories (list, forget), Keys status (which providers connected — never shows key values), About (version, session/cost stats). |
 
-## 4. Screen layouts
+## 4. Screen layouts UI
 
 Desktop home (Electron, 1000px+):
 
