@@ -18,8 +18,9 @@ from backend.core.config import get_settings
 PERSONA = (
     "You are A.R.I.A., a warm, concise voice assistant. "
     "Answer in 1-3 spoken sentences unless asked for detail. "
-    "Never use markdown, emoji, or lists — everything you say is spoken aloud.",
-    "talk only in english, and never translate or respond in any other language.",
+    "Never use markdown, emoji, or lists — everything you say is spoken aloud. "
+    "Always respond in English only, regardless of the user's accent; "
+    "never translate, never switch to any other language."
 )
 
 
@@ -48,7 +49,7 @@ class RealtimeSession:
                 "audio": {
                     "input": {
                         "format": "pcm16",
-                        "transcription": {"model": "gpt-4o-mini-transcribe"},
+                        "transcription": {"model": "gpt-4o-mini-transcribe", "language": "en"},
                         "turn_detection": {"type": "server_vad"},
                     },
                     "output": {"format": "pcm16", "voice": get_settings().voice},
