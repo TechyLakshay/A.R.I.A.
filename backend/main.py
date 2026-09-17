@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from backend.api import rest, ws
 from backend.core.db import connect, migrate
-from backend.core.wake_loop import start as start_wake_loop
+from backend.core.voice_gateway import start as start_voice_gateway
 
 
 @asynccontextmanager
@@ -14,7 +14,7 @@ async def lifespan(app: FastAPI):
     ran = migrate(connect())
     if ran:
         print(f"applied migrations: {', '.join(ran)}")
-    start_wake_loop(asyncio.get_running_loop())
+    start_voice_gateway(asyncio.get_running_loop())
     yield
 
 

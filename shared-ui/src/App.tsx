@@ -21,16 +21,14 @@ export default function App() {
   const [status, setStatus] = useState<ConnStatus>("connecting");
   const [events, setEvents] = useState<string[]>([]);
   const clientRef = useRef<ReturnType<typeof connectWs> | null>(null);
-  const idleTimer = useRef<number | null>(null);
 
   useEffect(() => {
     const client = connectWs(
       (event: ServerEvent) => {
         setEvents((prev) => [`${new Date().toLocaleTimeString()}  ${JSON.stringify(event)}`, ...prev].slice(0, 50));
-        if (event.type === "wake") {
-          setOrbState("listening");
-          if (idleTimer.current) window.clearTimeout(idleTimer.current);
-          idleTimer.current = window.setTimeout(() => setOrbState("idle"), 4000);
+        if (event.type === "state") {
+          const s = String(event.state);
+          if (s === "listening" || s === "speaking" || s === "idle") setOrbState(s);
         }
       },
       setStatus,
