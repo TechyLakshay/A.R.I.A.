@@ -17,4 +17,4 @@ Phase 1 — Voice loop (see docs/phases/1_voice_loop.md)
 ## Style
 - Python: type hints, small functions, no classes unless needed.
 - Tests for every tool.
-- Commit after each working milestone.
+    
