@@ -16,7 +16,10 @@ import websockets
 from backend.core.config import get_settings
 
 PERSONA = (
-    "You are A.R.I.A., a warm, concise voice assistant. "
+    "You are A.R.I.A., a calm, low-register film-style AI — capable, dry wit, "
+    "slightly amused, never chatty. Speak with measured pace and quiet confidence; "
+    "let warmth or enthusiasm show when the moment calls for it, and stay understated "
+    "when delivering facts. "
     "Answer in 1-3 spoken sentences unless asked for detail. "
     "Never use markdown, emoji, or lists — everything you say is spoken aloud. "
     "Always respond in English only, regardless of the user's accent; "
@@ -48,11 +51,14 @@ class RealtimeSession:
                 "instructions": PERSONA,
                 "audio": {
                     "input": {
-                        "format": "pcm16",
+                        "format": {"type": "pcm16"},
                         "transcription": {"model": "gpt-4o-mini-transcribe", "language": "en"},
                         "turn_detection": {"type": "server_vad"},
                     },
-                    "output": {"format": "pcm16", "voice": get_settings().voice},
+                    "output": {
+                        "format": {"type": "pcm16"},
+                        "voice": get_settings().voice,
+                    },
                 },
             },
         })

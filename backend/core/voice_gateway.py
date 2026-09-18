@@ -36,8 +36,10 @@ class VoiceGateway:
 
     # ---------- lifecycle ----------
     def start(self, loop: asyncio.AbstractEventLoop) -> None:
+        from backend.core.config import get_settings
+
         self._loop = loop
-        self.player = AudioPlayer()
+        self.player = AudioPlayer(effects=get_settings().voice_fx)
         threading.Thread(target=self._mic_loop, name="voice-gateway", daemon=True).start()
 
     # ---------- thread world (mic) ----------
